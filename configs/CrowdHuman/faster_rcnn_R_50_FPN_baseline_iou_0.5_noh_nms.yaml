@@ -1,0 +1,10 @@
+_BASE_: "./faster_rcnn_R_50_FPN_baseline_iou_0.5.yaml"
+MODEL:
+  OVERLAP_BOX_HEAD:
+    ENABLE: True
+    BUILD_ON_ROI_FEATURE: True
+    OVERLAP_IOU_THRESHOLD: 0.4
+    REG_LOSS_COEFF: 1.0
+    UNIFORM_REG_DIVISOR: True
+    PROB_LOSS_BETA: 0.02
+OUTPUT_DIR: "/data/workspace/Experiments/detectron2/Crowdhuman/faster_rcnn_R_50_FPN_baseline_iou0.5_noh_nms"
