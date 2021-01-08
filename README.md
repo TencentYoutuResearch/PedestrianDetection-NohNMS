@@ -4,11 +4,17 @@
   <img src="demo/architecture.png"/>
 </div>
 
-The offical implementation for the ["NOH-NMS: Improving Pedestrian Detection by Nearby Objects Hallucination"](https://arxiv.org/pdf/2007.13376.pdf) which is published in ACM MM 2020. 
+The offical implementation for the ["NOH-NMS: Improving Pedestrian Detection by Nearby Objects Hallucination"](https://arxiv.org/pdf/2007.13376.pdf) which is published in **ACM MM 2020**. 
 
 We propose Nearby Objects Hallucinator (NOH), which pinpoints the objects nearby each proposal with a Gaussian distribution, together with NOH-NMS, which dynamically eases the suppression for the space that might contain other objects with a high likelihood.
 
-This repo is implemented based on [detectron2](https://github.com/facebookresearch/detectron2).
+This work has won the **first place** at the [CrowdHuman Challenge, 2020](http://competition.baai.ac.cn/c/34/rank/timeline/68?sourceType=public).
+
+<div align="center">
+  <img src="demo/crowdhuman-comp.png"/>
+</div>
+
+* This repo is implemented based on [detectron2](https://github.com/facebookresearch/detectron2).
 
 ## Performance
 |    Model    | Backbone |  AP  |  Recall |  MR  |  
