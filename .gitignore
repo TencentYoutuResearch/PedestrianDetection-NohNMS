@@ -44,3 +44,4 @@ wheels/
 /datasets
 /projects/*/datasets
 /models
+.DS_Store
