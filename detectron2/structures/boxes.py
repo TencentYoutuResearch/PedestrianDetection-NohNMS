@@ -314,9 +314,11 @@ def pairwise_iou(boxes1: Boxes, boxes2: Boxes) -> torch.Tensor:
 
     boxes1, boxes2 = boxes1.tensor, boxes2.tensor
 
-    width_height = torch.min(boxes1[:, None, 2:], boxes2[:, 2:]) - torch.max(
-        boxes1[:, None, :2], boxes2[:, :2]
-    ) + 1  # [N,M,2]
+    width_height = (
+        torch.min(boxes1[:, None, 2:], boxes2[:, 2:])
+        - torch.max(boxes1[:, None, :2], boxes2[:, :2])
+        + 1
+    )  # [N,M,2]
 
     width_height.clamp_(min=0)  # [N,M,2]
     inter = width_height.prod(dim=2)  # [N,M]
@@ -329,6 +331,7 @@ def pairwise_iou(boxes1: Boxes, boxes2: Boxes) -> torch.Tensor:
         torch.zeros(1, dtype=inter.dtype, device=inter.device),
     )
     return iou
+
 
 def pairwise_ioa(boxes1: Boxes, anchor: Boxes) -> torch.Tensor:
     """
@@ -347,9 +350,11 @@ def pairwise_ioa(boxes1: Boxes, anchor: Boxes) -> torch.Tensor:
 
     boxes1, anchor = boxes1.tensor, anchor.tensor
 
-    width_height = torch.min(boxes1[:, None, 2:], anchor[:, 2:]) - torch.max(
-        boxes1[:, None, :2], anchor[:, :2]
-    ) + 1  # [N,M,2]
+    width_height = (
+        torch.min(boxes1[:, None, 2:], anchor[:, 2:])
+        - torch.max(boxes1[:, None, :2], anchor[:, :2])
+        + 1
+    )  # [N,M,2]
 
     width_height.clamp_(min=0)  # [N,M,2]
     inter = width_height.prod(dim=2)  # [N,M]
@@ -362,6 +367,7 @@ def pairwise_ioa(boxes1: Boxes, anchor: Boxes) -> torch.Tensor:
         torch.zeros(1, dtype=inter.dtype, device=inter.device),
     )
     return iou
+
 
 def calculate_iou(boxes1: torch.Tensor, boxes2: torch.Tensor) -> torch.Tensor:
     """
@@ -393,6 +399,7 @@ def calculate_iou(boxes1: torch.Tensor, boxes2: torch.Tensor) -> torch.Tensor:
     )
     return iou
 
+
 def calculate_iog(proposals: torch.Tensor, gts: torch.Tensor) -> torch.Tensor:
     """
     Given two lists of boxes of size N and N,
@@ -418,11 +425,10 @@ def calculate_iog(proposals: torch.Tensor, gts: torch.Tensor) -> torch.Tensor:
 
     # handle empty boxes
     iog = torch.where(
-        inter > 0,
-        inter / (gt_area),
-        torch.zeros(1, dtype=inter.dtype, device=inter.device),
+        inter > 0, inter / (gt_area), torch.zeros(1, dtype=inter.dtype, device=inter.device)
     )
     return iog
+
 
 def matched_boxlist_iou(boxes1: Boxes, boxes2: Boxes) -> torch.Tensor:
     """

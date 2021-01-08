@@ -315,10 +315,10 @@ _C.MODEL.ROI_BOX_HEAD.TRAIN_ON_PRED_BOXES = False
 # Whethre to use GIoU loss funciton for bbox regression
 _C.MODEL.ROI_BOX_HEAD.GIoU = False
 
-_C.MODEL.ROI_BOX_HEAD.REG_NUM_FC= 0
-_C.MODEL.ROI_BOX_HEAD.CLS_NUM_FC= 0
-_C.MODEL.ROI_BOX_HEAD.REG_NUM_CONV= 0
-_C.MODEL.ROI_BOX_HEAD.CLS_NUM_CONV= 0
+_C.MODEL.ROI_BOX_HEAD.REG_NUM_FC = 0
+_C.MODEL.ROI_BOX_HEAD.CLS_NUM_FC = 0
+_C.MODEL.ROI_BOX_HEAD.REG_NUM_CONV = 0
+_C.MODEL.ROI_BOX_HEAD.CLS_NUM_CONV = 0
 
 # ---------------------------------------------------------------------------- #
 # Overlap Box Head

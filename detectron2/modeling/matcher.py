@@ -20,7 +20,11 @@ class Matcher(object):
     """
 
     def __init__(
-        self, thresholds: List[float], labels: List[int], allow_low_quality_matches: bool = False, update_matches: bool = False
+        self,
+        thresholds: List[float],
+        labels: List[int],
+        allow_low_quality_matches: bool = False,
+        update_matches: bool = False,
     ):
         """
         Args:
@@ -152,7 +156,7 @@ class Matcher(object):
         _, proposal_idx = match_quality_matrix.max(dim=1)
         valid_idx = match_labels[proposal_idx] != 1
         match_labels[proposal_idx] = 1
-        
+
         gt_id = torch.arange(match_quality_matrix.size(0)).type_as(matches)
         valid_proposals_idx = proposal_idx[valid_idx]
         matches[valid_proposals_idx] = gt_id[valid_idx]
@@ -161,7 +165,7 @@ class Matcher(object):
         """Align CrowdDet. no transpose is different from transpose, as torch.max is random.
         """
         # For each gt, find the prediction with which it has highest quality
-        match_quality_matrix_t = match_quality_matrix.transpose(1,0)
+        match_quality_matrix_t = match_quality_matrix.transpose(1, 0)
         _, proposal_idx = torch.max(match_quality_matrix_t, axis=0)
 
         valid_idx = match_labels[proposal_idx] != 1
@@ -169,6 +173,7 @@ class Matcher(object):
         gt_id = torch.arange(match_quality_matrix.size(0)).type_as(matches)
         valid_proposals_idx = proposal_idx[valid_idx]
         matches[valid_proposals_idx] = gt_id[valid_idx]
+
 
 class MatcherIgnore(object):
     """
@@ -186,9 +191,7 @@ class MatcherIgnore(object):
     (b) a vector of length N containing the labels for each prediction.
     """
 
-    def __init__(
-        self, thresholds: List[float], labels: List[int], ignore_label=-1,
-    ):
+    def __init__(self, thresholds: List[float], labels: List[int], ignore_label=-1):
         """
         Args:
             thresholds (list): a list of thresholds used to stratify predictions
@@ -245,7 +248,9 @@ class MatcherIgnore(object):
         # match_quality_matrix is M (gt) x N (predicted)
         # Max over gt elements (dim 0) to find best gt candidate for each prediction
         overlaps_normal, overlaps_normal_indices = match_quality_matrix.sort(descending=True, dim=1)
-        overlaps_ignore, overlaps_ignore_indices = ignore_match_quality_matrix.sort(descending=True, dim=1)
+        overlaps_ignore, overlaps_ignore_indices = ignore_match_quality_matrix.sort(
+            descending=True, dim=1
+        )
 
         # gt max and indices, ignore max and indices
         max_overlaps_normal = overlaps_normal[:, :top_k].flatten()
@@ -254,18 +259,20 @@ class MatcherIgnore(object):
         gt_assignment_ignore = overlaps_ignore_indices[:, :top_k].flatten()
 
         ignore_assign_mask = (max_overlaps_normal < self.fg_thresholds) * (
-                max_overlaps_ignore > max_overlaps_normal)
-        max_overlaps = max_overlaps_normal * ~ignore_assign_mask + \
-                max_overlaps_ignore * ignore_assign_mask
-        gt_assignment = gt_assignment_normal * ~ignore_assign_mask + \
-                gt_assignment_ignore * ignore_assign_mask
+            max_overlaps_ignore > max_overlaps_normal
+        )
+        max_overlaps = (
+            max_overlaps_normal * ~ignore_assign_mask + max_overlaps_ignore * ignore_assign_mask
+        )
+        gt_assignment = (
+            gt_assignment_normal * ~ignore_assign_mask + gt_assignment_ignore * ignore_assign_mask
+        )
         labels = gt_classes.new_ones(gt_classes.shape[0]) * -1
         labels[gt_classes == 0] = 1
         labels = labels[gt_assignment]
 
         fg_mask = (max_overlaps >= self.fg_thresholds) * (labels != self.ignore_label)
-        bg_mask = (max_overlaps < self.bg_thresholds) * (
-                max_overlaps >= 0.0)
+        bg_mask = (max_overlaps < self.bg_thresholds) * (max_overlaps >= 0.0)
         ignore_mask = ~fg_mask * ~bg_mask
         labels[fg_mask] = 1
         labels[~fg_mask] = 0

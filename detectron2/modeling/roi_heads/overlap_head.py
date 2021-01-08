@@ -43,7 +43,17 @@ Naming convention:
 """
 
 
-def fast_rcnn_inference_with_overlap(boxes, scores, overlap_boxes, overlap_probs, image_shapes, score_thresh, nms_thresh, topk_per_image, allow_oob=False):
+def fast_rcnn_inference_with_overlap(
+    boxes,
+    scores,
+    overlap_boxes,
+    overlap_probs,
+    image_shapes,
+    score_thresh,
+    nms_thresh,
+    topk_per_image,
+    allow_oob=False,
+):
     """
     Call `fast_rcnn_inference_single_image` for all images.
 
@@ -72,15 +82,33 @@ def fast_rcnn_inference_with_overlap(boxes, scores, overlap_boxes, overlap_probs
 
     result_per_image = [
         fast_rcnn_inference_single_image_with_overlap(
-            boxes_per_image, scores_per_image, overlap_boxes_per_image, overlap_probs_per_image, image_shape, score_thresh, nms_thresh, topk_per_image, allow_oob
+            boxes_per_image,
+            scores_per_image,
+            overlap_boxes_per_image,
+            overlap_probs_per_image,
+            image_shape,
+            score_thresh,
+            nms_thresh,
+            topk_per_image,
+            allow_oob,
         )
-        for scores_per_image, boxes_per_image, overlap_boxes_per_image, overlap_probs_per_image, image_shape in zip(scores, boxes, overlap_boxes, overlap_probs, image_shapes)
+        for scores_per_image, boxes_per_image, overlap_boxes_per_image, overlap_probs_per_image, image_shape in zip(
+            scores, boxes, overlap_boxes, overlap_probs, image_shapes
+        )
     ]
     return tuple(list(x) for x in zip(*result_per_image))
 
 
 def fast_rcnn_inference_single_image_with_overlap(
-    boxes, scores, overlap_boxes, overlap_probs, image_shape, score_thresh, nms_thresh, topk_per_image, allow_oob=False
+    boxes,
+    scores,
+    overlap_boxes,
+    overlap_probs,
+    image_shape,
+    score_thresh,
+    nms_thresh,
+    topk_per_image,
+    allow_oob=False,
 ):
     """
     Single-image inference. Return bounding-box detection results by thresholding
@@ -108,7 +136,9 @@ def fast_rcnn_inference_single_image_with_overlap(
         boxes.clip(image_shape)
         boxes = boxes.tensor.view(-1, num_bbox_reg_classes, 4)  # R x C x 4
 
-        assert overlap_boxes.size(1) == 4, "overlap boxes prediction has no category, but: {}".format(overlap_boxes.size())
+        assert (
+            overlap_boxes.size(1) == 4
+        ), "overlap boxes prediction has no category, but: {}".format(overlap_boxes.size())
         overlap_boxes = Boxes(overlap_boxes)
         overlap_boxes.clip(image_shape)
         overlap_boxes = overlap_boxes.tensor
@@ -122,22 +152,24 @@ def fast_rcnn_inference_single_image_with_overlap(
     filter_inds = filter_mask.nonzero()
     if num_bbox_reg_classes == 1:
         boxes = boxes[filter_inds[:, 0], 0]
-        overlap_boxes = overlap_boxes[filter_inds[:,0]]
+        overlap_boxes = overlap_boxes[filter_inds[:, 0]]
     else:
         boxes = boxes[filter_mask]
-        overlap_boxes = overlap_boxes[filter_inds[:,0]]
+        overlap_boxes = overlap_boxes[filter_inds[:, 0]]
     scores = scores[filter_mask]
     overlap_probs = overlap_probs[filter_mask]
 
     # Apply per-class NMS
-    self_defined_nms_on = True #False
+    self_defined_nms_on = True  # False
     if self_defined_nms_on:
         boxes = np.ascontiguousarray(boxes.cpu())
         scores = np.ascontiguousarray(scores.cpu())
         overlap_probs = np.ascontiguousarray(overlap_probs.cpu())
         overlap_boxes = np.ascontiguousarray(overlap_boxes.cpu())
 
-        keep = batched_noh_nms(boxes, scores, overlap_probs, overlap_boxes, Nt=nms_thresh, thresh=0.01, method=3)
+        keep = batched_noh_nms(
+            boxes, scores, overlap_probs, overlap_boxes, Nt=nms_thresh, thresh=0.01, method=3
+        )
 
         boxes = torch.from_numpy(boxes).cuda()
         scores = torch.from_numpy(scores).cuda()
@@ -146,10 +178,17 @@ def fast_rcnn_inference_single_image_with_overlap(
         keep = keep[scores[keep].argsort(descending=True)]
     else:
         from torchvision.ops import nms
+
         keep = nms(boxes, scores, nms_thresh)
     if topk_per_image >= 0:
         keep = keep[:topk_per_image]
-    boxes, scores, overlap_boxes, overlap_probs, filter_inds = boxes[keep], scores[keep], overlap_boxes[keep], overlap_probs[keep], filter_inds[keep]
+    boxes, scores, overlap_boxes, overlap_probs, filter_inds = (
+        boxes[keep],
+        scores[keep],
+        overlap_boxes[keep],
+        overlap_probs[keep],
+        filter_inds[keep],
+    )
 
     result = Instances(image_shape)
     result.pred_boxes = Boxes(boxes)
@@ -167,8 +206,17 @@ class OverlapFastRCNNOutputs(FastRCNNOutputs):
     """
 
     def __init__(
-        self, box2box_transform, pred_class_logits, pred_proposal_deltas, proposals, smooth_l1_beta,
-        pred_overlap_deltas=None, pred_overlap_prob=None, overlap_configs=dict(), giou=False, allow_oob=False
+        self,
+        box2box_transform,
+        pred_class_logits,
+        pred_proposal_deltas,
+        proposals,
+        smooth_l1_beta,
+        pred_overlap_deltas=None,
+        pred_overlap_prob=None,
+        overlap_configs=dict(),
+        giou=False,
+        allow_oob=False,
     ):
         """
         Args:
@@ -200,11 +248,13 @@ class OverlapFastRCNNOutputs(FastRCNNOutputs):
         self.pred_overlap_deltas = pred_overlap_deltas
         self.pred_overlap_prob = pred_overlap_prob
 
-        assert isinstance(overlap_configs, dict), 'overlap configs must be dict, {}'.format(type(overlap_configs))
-        self.overlap_iou_threshold = overlap_configs.get('overlap_iou_threshold', 0.3)
-        self.loss_overlap_reg_coeff = overlap_configs.get('loss_overlap_reg_coeff', 0.1)
-        self.uniform_reg_divisor = overlap_configs.get('uniform_reg_divisor', False)
-        self.cls_box_beta = overlap_configs.get('cls_box_beta', 0.1)
+        assert isinstance(overlap_configs, dict), "overlap configs must be dict, {}".format(
+            type(overlap_configs)
+        )
+        self.overlap_iou_threshold = overlap_configs.get("overlap_iou_threshold", 0.3)
+        self.loss_overlap_reg_coeff = overlap_configs.get("loss_overlap_reg_coeff", 0.1)
+        self.uniform_reg_divisor = overlap_configs.get("uniform_reg_divisor", False)
+        self.cls_box_beta = overlap_configs.get("cls_box_beta", 0.1)
 
         self.giou = giou
         self.allow_oob = allow_oob
@@ -242,7 +292,7 @@ class OverlapFastRCNNOutputs(FastRCNNOutputs):
 
         overlap_loss_dict = {
             "loss_overlap_reg": loss_overlap_reg,
-            "loss_overlap_prob": loss_overlap_prob
+            "loss_overlap_prob": loss_overlap_prob,
         }
         return overlap_loss_dict
 
@@ -261,11 +311,11 @@ class OverlapFastRCNNOutputs(FastRCNNOutputs):
             return loss_overlap_reg / (self.gt_classes.numel() + 1e-6)
         else:
             return loss_overlap_reg / (trained_idx.size(0) + 1e-6) * self.loss_overlap_reg_coeff
-    
+
     def overlap_prob_loss(self):
         self.pred_overlap_prob = self.pred_overlap_prob
         loss_overlap_prob = smooth_l1_loss(
-            self.pred_overlap_prob[:, 0], # logit --> sigmoid
+            self.pred_overlap_prob[:, 0],  # logit --> sigmoid
             self.overlap_iou,
             self.cls_box_beta,
             reduction="sum",
@@ -325,7 +375,15 @@ class OverlapFastRCNNOutputs(FastRCNNOutputs):
         image_shapes = self.image_shapes
 
         return fast_rcnn_inference_with_overlap(
-            boxes, scores, overlap_boxes, overlap_probs, image_shapes, score_thresh, nms_thresh, topk_per_image, allow_oob=self.allow_oob
+            boxes,
+            scores,
+            overlap_boxes,
+            overlap_probs,
+            image_shapes,
+            score_thresh,
+            nms_thresh,
+            topk_per_image,
+            allow_oob=self.allow_oob,
         )
 
 

@@ -84,6 +84,7 @@ class FastRCNNConvFCHead(nn.Module):
     def output_size(self):
         return self._output_size
 
+
 def build_box_head(cfg, input_shape):
     """
     Build a box head defined by `cfg.MODEL.ROI_BOX_HEAD.NAME`.

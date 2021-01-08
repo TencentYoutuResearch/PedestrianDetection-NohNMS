@@ -49,6 +49,7 @@ def subsample_labels(labels, num_samples, positive_fraction, bg_label):
     neg_idx = negative[perm2]
     return pos_idx, neg_idx
 
+
 def bernoulli_subsample_labels(labels, num_samples, positive_fraction, bg_label):
     fg_mask = labels == 0
     bg_mask = labels == 1
@@ -56,8 +57,8 @@ def bernoulli_subsample_labels(labels, num_samples, positive_fraction, bg_label)
     fg_inds_mask = _bernoulli_sample_masks(fg_mask, pos_max, True)
     neg_max = num_samples - fg_inds_mask.sum()
     bg_inds_mask = _bernoulli_sample_masks(bg_mask, neg_max, True)
-    pos_idx = torch.where(fg_inds_mask==1)[0]
-    neg_idx = torch.where(bg_inds_mask==1)[0]
+    pos_idx = torch.where(fg_inds_mask == 1)[0]
+    neg_idx = torch.where(bg_inds_mask == 1)[0]
     return pos_idx, neg_idx
 
 

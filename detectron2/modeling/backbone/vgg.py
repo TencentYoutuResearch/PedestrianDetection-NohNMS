@@ -6,13 +6,10 @@ import torchvision.models.vgg16 as vgg16
 from .backbone import Backbone
 from .build import BACKBONE_REGISTRY
 
-__all__ = [
-    "VGG",
-    "build_vgg16_backbone",
-]
+__all__ = ["VGG", "build_vgg16_backbone"]
+
 
 class VGG(Backbone):
-
     def __init__(self, cfg, input_shape=None, pretrained=True, freeze_at=3):
         super().__init__()
         backbone = vgg16(pretrained=pretrained)
@@ -29,7 +26,7 @@ class VGG(Backbone):
             x = layer(x)
         outputs["output"] = x
         return outputs
-    
+
     def output_shape(self):
         pass
 

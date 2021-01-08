@@ -195,11 +195,13 @@ def register_all_cityscapes(root="datasets"):
             image_dir=image_dir, gt_dir=gt_dir, evaluator_type="sem_seg", **meta
         )
 
+
 # ==== Predefined splits for raw crowdhuman images ===========
 _PREDEFINED_SPLITS_CROWDHUMAN = {
     "crowdhuman_train": ("crowdhuman/images/train", "crowdhuman/annotations/annotation_train.odgt"),
     "crowdhuman_val": ("crowdhuman/images/val", "crowdhuman/annotations/annotation_val.odgt"),
 }
+
 
 def register_all_crowdhuman(root="datasets"):
     for key, (image_dir, anno_file) in _PREDEFINED_SPLITS_CROWDHUMAN.items():
@@ -208,8 +210,10 @@ def register_all_crowdhuman(root="datasets"):
             _get_builtin_metadata("crowdhuman"),
             os.path.join(root, anno_file),
             os.path.join(root, image_dir),
-            os.path.join(root, "crowdhuman/annotations/val_gt.json")
+            os.path.join(root, "crowdhuman/annotations/val_gt.json"),
         )
+
+
 # ==== Predefined splits for PASCAL VOC ===========
 def register_all_pascal_voc(root="datasets"):
     SPLITS = [

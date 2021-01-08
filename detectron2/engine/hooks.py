@@ -347,7 +347,9 @@ class EvalHook(HookBase):
     def after_step(self):
         next_iter = self.trainer.iter + 1
         is_final = next_iter == self.trainer.max_iter
-        if is_final or (self._period > 0 and next_iter >= self.eval_start_iter and next_iter % self._period == 0):
+        if is_final or (
+            self._period > 0 and next_iter >= self.eval_start_iter and next_iter % self._period == 0
+        ):
             self._do_eval()
 
     def after_train(self):

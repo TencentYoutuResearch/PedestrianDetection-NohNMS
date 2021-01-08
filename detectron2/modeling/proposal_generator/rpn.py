@@ -84,6 +84,7 @@ class StandardRPNHead(nn.Module):
             pred_anchor_deltas.append(self.anchor_deltas(t))
         return pred_objectness_logits, pred_anchor_deltas
 
+
 @RPN_HEAD_REGISTRY.register()
 class SeparateRPNHead(nn.Module):
     """
@@ -181,7 +182,10 @@ class RPN(nn.Module):
         )
         self.box2box_transform = Box2BoxTransform(weights=cfg.MODEL.RPN.BBOX_REG_WEIGHTS)
         self.anchor_matcher = Matcher(
-            cfg.MODEL.RPN.IOU_THRESHOLDS, cfg.MODEL.RPN.IOU_LABELS, allow_low_quality_matches=True, update_matches=self.update_matches
+            cfg.MODEL.RPN.IOU_THRESHOLDS,
+            cfg.MODEL.RPN.IOU_LABELS,
+            allow_low_quality_matches=True,
+            update_matches=self.update_matches,
         )
         self.rpn_head = build_rpn_head(cfg, [input_shape[f] for f in self.in_features])
 
@@ -201,8 +205,16 @@ class RPN(nn.Module):
             loss: dict[Tensor] or None
         """
         # gt_boxes = [x.gt_boxes for x in gt_instances] if gt_instances is not None else None
-        gt_boxes = [x.gt_boxes[x.gt_classes != -1] for x in gt_instances] if gt_instances is not None else None
-        ignore_gt_boxes = [x.gt_boxes[x.gt_classes == -1] for x in gt_instances] if gt_instances is not None else None
+        gt_boxes = (
+            [x.gt_boxes[x.gt_classes != -1] for x in gt_instances]
+            if gt_instances is not None
+            else None
+        )
+        ignore_gt_boxes = (
+            [x.gt_boxes[x.gt_classes == -1] for x in gt_instances]
+            if gt_instances is not None
+            else None
+        )
         del gt_instances
         if isinstance(features, dict):
             features = [features[f] for f in self.in_features]
@@ -254,7 +266,7 @@ class RPN(nn.Module):
                     self.post_nms_topk[self.training],
                     self.min_box_side_len,
                     self.training,
-                    allow_oob = self.allow_oob,
+                    allow_oob=self.allow_oob,
                 )
             else:
                 proposals = find_top_rpn_proposals(
@@ -266,7 +278,7 @@ class RPN(nn.Module):
                     self.post_nms_topk[self.training],
                     self.min_box_side_len,
                     self.training,
-                    allow_oob = self.allow_oob,
+                    allow_oob=self.allow_oob,
                 )
 
         return proposals, losses
