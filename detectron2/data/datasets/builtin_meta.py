@@ -235,6 +235,7 @@ def _get_coco_panoptic_separated_meta():
     ret.update(_get_coco_instances_meta())
     return ret
 
+
 CITYPERSON_CATEGORIES = [
     {"color": [119, 11, 32], "isthing": 1, "id": 1, "name": "ped"},
     {"color": [220, 20, 60], "isthing": 1, "id": 2, "name": "ign"},
@@ -249,11 +250,13 @@ CROWDHUMAN_CATEGORIES = [
     {"color": [119, 11, 32], "isthing": 1, "id": 1, "name": "ped"},
     {"color": [220, 20, 60], "isthing": 1, "id": 2, "name": "ign"},
 ]
+
+
 def _get_crowdhuman_instances_meta():
     thing_ids = [k["id"] for k in CROWDHUMAN_CATEGORIES if k["isthing"] == 1]
     thing_colors = [k["color"] for k in CROWDHUMAN_CATEGORIES if k["isthing"] == 1]
 
-    thing_dataset_id_to_contiguous_id = {k: i for i, k in enumerate(thing_ids)}    
+    thing_dataset_id_to_contiguous_id = {k: i for i, k in enumerate(thing_ids)}
     thing_classes = [k["name"] for k in CROWDHUMAN_CATEGORIES if k["isthing"] == 1]
     ret = {
         "thing_dataset_id_to_contiguous_id": thing_dataset_id_to_contiguous_id,
@@ -261,6 +264,7 @@ def _get_crowdhuman_instances_meta():
         "thing_colors": thing_colors,
     }
     return ret
+
 
 def _get_builtin_metadata(dataset_name):
     if dataset_name == "coco":

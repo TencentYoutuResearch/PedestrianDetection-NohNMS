@@ -203,17 +203,15 @@ def find_top_rpn_proposals_all_level(
     image_sizes = images.image_sizes  # in (h, w) order
     num_images = len(image_sizes)
     device = proposals[0].device
-    
+
     results = []
     for bid in range(num_images):
         proposals_all_level = []
         logits_all_level = []
-        for _, proposals_i, logits_i in zip(
-            itertools.count(), proposals, pred_objectness_logits
-        ):
-            proposals_all_level.append(proposals_i[bid]) # shape: (N, Hi*Wi*A, 4)
+        for _, proposals_i, logits_i in zip(itertools.count(), proposals, pred_objectness_logits):
+            proposals_all_level.append(proposals_i[bid])  # shape: (N, Hi*Wi*A, 4)
             logits_all_level.append(logits_i[bid])
-        batch_proposals = torch.cat(proposals_all_level, dim=0) # (all, 4)
+        batch_proposals = torch.cat(proposals_all_level, dim=0)  # (all, 4)
         batch_scores = torch.cat(logits_all_level, dim=0)
 
         # filter boxes based on min_size
@@ -369,7 +367,9 @@ class RPNOutputs(object):
         gt_anchor_deltas = []
         # Concatenate anchors from all feature maps into a single Boxes per image
         anchors = [Boxes.cat(anchors_i) for anchors_i in self.anchors]
-        for image_idx, (image_size_i, anchors_i, gt_boxes_i) in enumerate(zip(self.image_sizes, anchors, self.gt_boxes)):
+        for image_idx, (image_size_i, anchors_i, gt_boxes_i) in enumerate(
+            zip(self.image_sizes, anchors, self.gt_boxes)
+        ):
             """
             image_size_i: (h, w) for the i-th image
             anchors_i: anchors for i-th image
@@ -382,9 +382,13 @@ class RPNOutputs(object):
             if self.ignore_ioa:
                 if self.ignore_gt_boxes[image_idx].tensor.numel() > 0:
                     if self.ignore_gt_boxes[image_idx].tensor.size(0) > 0:
-                        ignore_overlaps = retry_if_cuda_oom(pairwise_ioa)(self.ignore_gt_boxes[image_idx], anchors_i)
+                        ignore_overlaps = retry_if_cuda_oom(pairwise_ioa)(
+                            self.ignore_gt_boxes[image_idx], anchors_i
+                        )
                         ignore_overlaps_vals, _ = ignore_overlaps.max(dim=0)
-                        gt_objectness_logits_i[(gt_objectness_logits_i != 1) & (ignore_overlaps_vals > 0.5)] = -1
+                        gt_objectness_logits_i[
+                            (gt_objectness_logits_i != 1) & (ignore_overlaps_vals > 0.5)
+                        ] = -1
             # Matching is memory-expensive and may result in CPU tensors. But the result is small
 
             if self.ignore_ambiguous_sample and match_quality_matrix.size(0) > 1:
@@ -392,9 +396,7 @@ class RPNOutputs(object):
                 if len(gt_boxes_i) > 1:
                     # overlap_iou = matched_vals[1, :]
                     overlap_gt_idx = sorted_idx[1, :]
-                    gt_density_matrix = pairwise_iou(
-                        gt_boxes_i, gt_boxes_i
-                    )
+                    gt_density_matrix = pairwise_iou(gt_boxes_i, gt_boxes_i)
                     sorted_matrix, _ = gt_density_matrix.sort(0, descending=True)
                     gt_density = sorted_matrix[1, :]
 
@@ -403,7 +405,12 @@ class RPNOutputs(object):
                     gt_ioa = ioa_vals[1, :]
 
                     overlap_iog = calculate_iog(gt_boxes_i.tensor[overlap_gt_idx], anchors_i.tensor)
-                    gt_objectness_logits_i[(overlap_iog > 0.5) & (overlap_iog > gt_ioa[matched_idxs]) & (gt_density[matched_idxs] > 0.5) & (gt_objectness_logits_i==1)] = -1 
+                    gt_objectness_logits_i[
+                        (overlap_iog > 0.5)
+                        & (overlap_iog > gt_ioa[matched_idxs])
+                        & (gt_density[matched_idxs] > 0.5)
+                        & (gt_objectness_logits_i == 1)
+                    ] = -1
 
             gt_objectness_logits_i = gt_objectness_logits_i.to(device=gt_boxes_i.device)
             del match_quality_matrix
@@ -433,7 +440,9 @@ class RPNOutputs(object):
         gt_objectness_logits = []
         gt_anchor_deltas = []
 
-        for image_idx, (image_size_i, anchors_i, gt_boxes_i) in enumerate(zip(self.image_sizes, self.anchors, self.gt_boxes)):
+        for image_idx, (image_size_i, anchors_i, gt_boxes_i) in enumerate(
+            zip(self.image_sizes, self.anchors, self.gt_boxes)
+        ):
             gt_objectness_logits_i = []
             gt_anchor_deltas_i = []
             for lvl_anchors in anchors_i:
@@ -443,7 +452,7 @@ class RPNOutputs(object):
                 )
                 gt_objectness_logits_lvl = gt_objectness_logits_lvl.to(device=gt_boxes_i.device)
                 del match_quality_matrix_lvl
-            
+
                 if len(gt_boxes_i) == 0:
                     gt_anchor_deltas_lvl = torch.zeros_like(lvl_anchors.tensor)
                 else:
@@ -453,7 +462,7 @@ class RPNOutputs(object):
                     )
                 gt_objectness_logits_i.append(gt_objectness_logits_lvl)
                 gt_anchor_deltas_i.append(gt_anchor_deltas_lvl)
-            
+
             gt_anchor_deltas_i = torch.cat(gt_anchor_deltas_i)
             gt_objectness_logits_i = torch.cat(gt_objectness_logits_i)
 
@@ -486,6 +495,7 @@ class RPNOutputs(object):
             label.scatter_(0, pos_idx, 1)
             label.scatter_(0, neg_idx, 0)
             return label
+
         if self.get_gt_per_level:
             gt_objectness_logits, gt_anchor_deltas = self._get_ground_truth_per_level()
         else:

@@ -146,7 +146,10 @@ def batched_nms_rotated(boxes, scores, idxs, iou_threshold):
     keep = nms_rotated(boxes_for_nms, scores, iou_threshold)
     return keep
 
-def batched_noh_nms(boxes, scores, overlap_probs, overlap_boxes, sigma=0.5, Nt=0.5, thresh=0.001, method=0):
+
+def batched_noh_nms(
+    boxes, scores, overlap_probs, overlap_boxes, sigma=0.5, Nt=0.5, thresh=0.001, method=0
+):
     """
     scores: sorted scores input.
     """
@@ -162,7 +165,7 @@ def batched_noh_nms(boxes, scores, overlap_probs, overlap_boxes, sigma=0.5, Nt=0
                 maxscore = scores[pos]
                 maxpos = pos
             pos = pos + 1
-        
+
         # swap max box
         tx1 = boxes[maxpos][0]
         ty1 = boxes[maxpos][1]
@@ -218,8 +221,8 @@ def batched_noh_nms(boxes, scores, overlap_probs, overlap_boxes, sigma=0.5, Nt=0
         overlap_probs[i] = temp_max_prob
 
         pos = i + 1
-        
-        area_i = (boxes[i,2] - boxes[i,0] + 1) * (boxes[i,3] - boxes[i,1] + 1)
+
+        area_i = (boxes[i, 2] - boxes[i, 0] + 1) * (boxes[i, 3] - boxes[i, 1] + 1)
         if overlap_probs[i] > 0.3:
             overlap_x = overlap_boxes[i][0]
             overlap_y = overlap_boxes[i][1]
@@ -230,37 +233,39 @@ def batched_noh_nms(boxes, scores, overlap_probs, overlap_boxes, sigma=0.5, Nt=0
             box_y = boxes[i][1]
             box_w = boxes[i][2] - boxes[i][0]
             box_h = boxes[i][3] - boxes[i][1]
-            pred_deltas_overlap = np.array([
-                (overlap_x - box_x) / box_w,
-                (overlap_y - box_y) / box_h,
-                np.log(overlap_w / box_w),
-                np.log(overlap_h / box_h),
-            ])
+            pred_deltas_overlap = np.array(
+                [
+                    (overlap_x - box_x) / box_w,
+                    (overlap_y - box_y) / box_h,
+                    np.log(overlap_w / box_w),
+                    np.log(overlap_h / box_h),
+                ]
+            )
         while pos < N:
-            area_pos = (boxes[pos,2] - boxes[pos,0] + 1) * (boxes[pos,3] - boxes[pos,1] + 1)
-            iw = (min(boxes[pos,2], boxes[i,2]) - max(boxes[pos,0], boxes[i, 0]))
+            area_pos = (boxes[pos, 2] - boxes[pos, 0] + 1) * (boxes[pos, 3] - boxes[pos, 1] + 1)
+            iw = min(boxes[pos, 2], boxes[i, 2]) - max(boxes[pos, 0], boxes[i, 0])
             if iw > 0:
-                ih = (min(boxes[pos,3], boxes[i,3]) - max(boxes[pos,1], boxes[i, 1]))
+                ih = min(boxes[pos, 3], boxes[i, 3]) - max(boxes[pos, 1], boxes[i, 1])
                 if ih > 0:
                     ua = float(area_pos + area_i - ih * iw)
                     ov = iw * ih / ua
 
-                    if method == 1: #linear（soft nms)
+                    if method == 1:  # linear（soft nms)
                         if ov > Nt:
                             weight = 1 - ov
                         else:
                             weight = 1
-                    elif method == 2: #gaussian (soft nms)
+                    elif method == 2:  # gaussian (soft nms)
                         if ov > Nt:
                             weight = np.exp(-(ov * ov) / sigma)
                         else:
                             weight = 1
-                    elif method == 0: #regular nms
+                    elif method == 0:  # regular nms
                         if ov > Nt:
                             weight = 0
                         else:
                             weight = 1
-                    elif method == 3: #noh nms
+                    elif method == 3:  # noh nms
                         if ov > Nt:
                             if overlap_probs[i] > 0.3 and overlap_flags[i] == 0:
                                 prop_x = boxes[pos][0]
@@ -268,21 +273,23 @@ def batched_noh_nms(boxes, scores, overlap_probs, overlap_boxes, sigma=0.5, Nt=0
                                 prop_w = boxes[pos][2] - boxes[pos][0]
                                 prop_h = boxes[pos][3] - boxes[pos][1]
 
-                                proposal_deltas = np.array([
-                                    (prop_x - box_x) / box_w,
-                                    (prop_y - box_y) / box_h,
-                                    np.log(prop_w / box_w),
-                                    np.log(prop_h / box_h),
-                                ])
+                                proposal_deltas = np.array(
+                                    [
+                                        (prop_x - box_x) / box_w,
+                                        (prop_y - box_y) / box_h,
+                                        np.log(prop_w / box_w),
+                                        np.log(prop_h / box_h),
+                                    ]
+                                )
                                 upper = np.sum(np.power(proposal_deltas - pred_deltas_overlap, 2))
-                                weight = np.exp( -upper/ (2.0 * np.power(0.2, 2)))
+                                weight = np.exp(-upper / (2.0 * np.power(0.2, 2)))
                                 if weight >= 0.6:
                                     overlap_flags[pos] = 1
                             else:
                                 weight = 0
                         else:
                             weight = 1
-                    elif method == 4: #Adaptive NMS
+                    elif method == 4:  # Adaptive NMS
                         Nm = max(overlap_probs[i], Nt)
                         if ov > Nm:
                             weight = 0
@@ -290,39 +297,39 @@ def batched_noh_nms(boxes, scores, overlap_probs, overlap_boxes, sigma=0.5, Nt=0
                             weight = 1
                     else:
                         raise NotImplementedError("method {} is not implemented".format(method))
-                    
+
                     scores[pos] = weight * scores[pos]
 
                     if scores[pos] < thresh:
-                        x1 = boxes[N-1][0]
-                        y1 = boxes[N-1][1]
-                        x2 = boxes[N-1][2]
-                        y2 = boxes[N-1][3]
+                        x1 = boxes[N - 1][0]
+                        y1 = boxes[N - 1][1]
+                        x2 = boxes[N - 1][2]
+                        y2 = boxes[N - 1][3]
                         boxes[pos][0] = x1
                         boxes[pos][1] = y1
                         boxes[pos][2] = x2
                         boxes[pos][3] = y2
 
-                        x1 = overlap_boxes[N-1][0]
-                        y1 = overlap_boxes[N-1][1]
-                        x2 = overlap_boxes[N-1][2]
-                        y2 = overlap_boxes[N-1][3]
+                        x1 = overlap_boxes[N - 1][0]
+                        y1 = overlap_boxes[N - 1][1]
+                        x2 = overlap_boxes[N - 1][2]
+                        y2 = overlap_boxes[N - 1][3]
                         overlap_boxes[pos][0] = x1
                         overlap_boxes[pos][1] = y1
                         overlap_boxes[pos][2] = x2
                         overlap_boxes[pos][3] = y2
 
-                        temp_flag = overlap_flags[N-1]
-                        overlap_flags[N-1] = overlap_flags[pos]
+                        temp_flag = overlap_flags[N - 1]
+                        overlap_flags[N - 1] = overlap_flags[pos]
                         overlap_flags[pos] = temp_flag
 
-                        s = scores[N-1]
+                        s = scores[N - 1]
                         scores[pos] = s
 
-                        s = overlap_probs[N-1]
+                        s = overlap_probs[N - 1]
                         overlap_probs[pos] = s
                         N = N - 1
-                        pos = pos -1
+                        pos = pos - 1
             pos = pos + 1
 
     keep = torch.arange(N)

@@ -28,6 +28,8 @@ __all__ = [
 ]
 
 has_bias = True
+
+
 class ResNetBlockBase(nn.Module):
     def __init__(self, in_channels, out_channels, stride):
         """
@@ -243,7 +245,6 @@ class DeformBottleneckBlock(ResNetBlockBase):
             if layer is not None:  # shortcut can be None
                 # weight_init.c2_msra_fill(layer)
                 weight_init.c2_xavier_fill(layer)
-
 
         nn.init.constant_(self.conv2_offset.weight, 0)
         nn.init.constant_(self.conv2_offset.bias, 0)

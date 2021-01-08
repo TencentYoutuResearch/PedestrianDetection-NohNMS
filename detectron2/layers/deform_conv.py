@@ -357,7 +357,7 @@ class DeformConv(nn.Module):
         self.bias = None
 
         nn.init.kaiming_uniform_(self.weight, nonlinearity="relu")
-    
+
     def return_empty(self, x):
         # When input is empty, we want to return a empty tensor with "correct" shape,
         # So that the following operations will not panic

@@ -39,7 +39,9 @@ Naming convention:
 """
 
 
-def fast_rcnn_inference(boxes, scores, image_shapes, score_thresh, nms_thresh, topk_per_image, allow_oob=False):
+def fast_rcnn_inference(
+    boxes, scores, image_shapes, score_thresh, nms_thresh, topk_per_image, allow_oob=False
+):
     """
     Call `fast_rcnn_inference_single_image` for all images.
 
@@ -67,7 +69,13 @@ def fast_rcnn_inference(boxes, scores, image_shapes, score_thresh, nms_thresh, t
     """
     result_per_image = [
         fast_rcnn_inference_single_image(
-            boxes_per_image, scores_per_image, image_shape, score_thresh, nms_thresh, topk_per_image, allow_oob
+            boxes_per_image,
+            scores_per_image,
+            image_shape,
+            score_thresh,
+            nms_thresh,
+            topk_per_image,
+            allow_oob,
         )
         for scores_per_image, boxes_per_image, image_shape in zip(scores, boxes, image_shapes)
     ]
@@ -116,6 +124,7 @@ def fast_rcnn_inference_single_image(
 
     # Apply per-class NMS
     from torchvision.ops import nms
+
     keep = nms(boxes, scores, nms_thresh)
     if topk_per_image >= 0:
         keep = keep[:topk_per_image]
@@ -135,7 +144,14 @@ class FastRCNNOutputs(object):
     """
 
     def __init__(
-        self, box2box_transform, pred_class_logits, pred_proposal_deltas, proposals, smooth_l1_beta, giou=False, allow_oob=False
+        self,
+        box2box_transform,
+        pred_class_logits,
+        pred_proposal_deltas,
+        proposals,
+        smooth_l1_beta,
+        giou=False,
+        allow_oob=False,
     ):
         """
         Args:
@@ -223,11 +239,13 @@ class FastRCNNOutputs(object):
         pos_loss = F.cross_entropy(pred_class_logits, self.gt_classes, reduction="none")
 
         max_score, max_indice = torch.max(self.pred_class_logits[:, :-1], dim=1)
-        gt_classes = max_indice * (1 - self.gt_classes) + self.gt_classes * (self.pred_class_logits.shape[1] - 1)
+        gt_classes = max_indice * (1 - self.gt_classes) + self.gt_classes * (
+            self.pred_class_logits.shape[1] - 1
+        )
         neg_loss = F.cross_entropy(self.pred_class_logits, gt_classes, reduction="none")
 
-        total_loss =  pos_loss * (1 - self.gt_classes) + neg_loss * self.gt_classes
-        
+        total_loss = pos_loss * (1 - self.gt_classes) + neg_loss * self.gt_classes
+
         return torch.mean(total_loss)
 
     def matching_softmax_cross_entropy_loss2(self, alpha=1.0, beta=0.3):
@@ -237,13 +255,14 @@ class FastRCNNOutputs(object):
         pos_loss2 = F.cross_entropy(pred_class_logits, self.gt_classes, reduction="none")
 
         _, max_indice = torch.max(self.pred_class_logits[:, :-1], dim=1)
-        gt_classes = max_indice * (1 - self.gt_classes) + self.gt_classes * (self.pred_class_logits.shape[1] - 1)
+        gt_classes = max_indice * (1 - self.gt_classes) + self.gt_classes * (
+            self.pred_class_logits.shape[1] - 1
+        )
         loss = F.cross_entropy(self.pred_class_logits, gt_classes, reduction="none")
 
         total_loss = alpha * loss + beta * pos_loss2 * (1 - self.gt_classes)
-        
-        return torch.mean(total_loss)
 
+        return torch.mean(total_loss)
 
     def smooth_l1_loss(self):
         """
@@ -259,7 +278,7 @@ class FastRCNNOutputs(object):
         cls_agnostic_bbox_reg = self.pred_proposal_deltas.size(1) == box_dim
         device = self.pred_proposal_deltas.device
 
-        bg_class_ind = 1 #self.pred_class_logits.shape[1] - 1
+        bg_class_ind = 1  # self.pred_class_logits.shape[1] - 1
 
         # Box delta loss is only computed between the prediction for the gt class k
         # (if 0 <= k < bg_class_ind) and the target; there is no loss defined on predictions
@@ -280,7 +299,7 @@ class FastRCNNOutputs(object):
             # Note that compared to Detectron1,
             # we do not perform bounding box regression for background classes.
             gt_class_cols = box_dim * fg_gt_classes[:, None] + torch.arange(box_dim, device=device)
-        
+
         loss_box_reg = smooth_l1_loss(
             self.pred_proposal_deltas[fg_inds[:, None], gt_class_cols],
             gt_proposal_deltas[fg_inds],
@@ -336,7 +355,7 @@ class FastRCNNOutputs(object):
             "loss_cls": self.matching_softmax_cross_entropy_loss(),
             "loss_box_reg": self.smooth_l1_loss() if not self.giou else self.giou_loss(),
         }
-    
+
     def giou_loss(self, eps=1e-7):
         """
         Generalized Intersection over Union: A Metric and A Loss for
@@ -428,7 +447,7 @@ class FastRCNNOutputs(object):
         """
         probs = F.softmax(self.pred_class_logits, dim=-1)
         return probs.split(self.num_preds_per_image, dim=0)
-    
+
     def predict_multi_probs(self):
         max_fg_prob, _ = torch.max(self.pred_class_logits[:, :-1], dim=1)
         probs = torch.stack([max_fg_prob, self.pred_class_logits[:, -1]], axis=1)
@@ -450,7 +469,13 @@ class FastRCNNOutputs(object):
         image_shapes = self.image_shapes
 
         return fast_rcnn_inference(
-            boxes, scores, image_shapes, score_thresh, nms_thresh, topk_per_image, allow_oob=self.allow_oob
+            boxes,
+            scores,
+            image_shapes,
+            score_thresh,
+            nms_thresh,
+            topk_per_image,
+            allow_oob=self.allow_oob,
         )
 
 

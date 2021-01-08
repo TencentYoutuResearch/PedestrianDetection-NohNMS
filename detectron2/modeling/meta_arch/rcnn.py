@@ -13,6 +13,7 @@ from ..postprocessing import detector_postprocess
 from ..proposal_generator import build_proposal_generator
 from ..roi_heads import build_roi_heads
 from .build import META_ARCH_REGISTRY
+
 __all__ = ["GeneralizedRCNN", "ProposalNetwork"]
 
 
@@ -176,7 +177,9 @@ class GeneralizedRCNN(nn.Module):
             results = self.roi_heads.forward_with_given_boxes(features, detected_instances)
 
         if do_postprocess:
-            return GeneralizedRCNN._postprocess(results, batched_inputs, images.image_sizes, allow_oob=self.allow_oob)
+            return GeneralizedRCNN._postprocess(
+                results, batched_inputs, images.image_sizes, allow_oob=self.allow_oob
+            )
         else:
             return results
 

@@ -65,6 +65,7 @@ def filter_images_with_only_crowd_annotations(dataset_dicts):
     )
     return dataset_dicts
 
+
 def filter_images_with_only_ignore_annotations(dataset_dicts):
     num_before = len(dataset_dicts)
 
@@ -83,6 +84,7 @@ def filter_images_with_only_ignore_annotations(dataset_dicts):
         )
     )
     return dataset_dicts
+
 
 def filter_images_with_few_keypoints(dataset_dicts, min_keypoints_per_image):
     """

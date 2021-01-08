@@ -21,7 +21,14 @@ class FPN(Backbone):
     """
 
     def __init__(
-        self, bottom_up, in_features, out_channels, norm="", top_block=None, fuse_type="sum", addition_ensemble=""
+        self,
+        bottom_up,
+        in_features,
+        out_channels,
+        norm="",
+        top_block=None,
+        fuse_type="sum",
+        addition_ensemble="",
     ):
         """
         Args:
@@ -102,7 +109,7 @@ class FPN(Backbone):
                 )
                 weight_init.c2_xavier_fill(output_conv)
             weight_init.c2_xavier_fill(lateral_conv)
-            
+
             stage = int(math.log2(in_strides[idx]))
             self.add_module("fpn_lateral{}".format(stage), lateral_conv)
             self.add_module("fpn_output{}".format(stage), output_conv)
@@ -122,7 +129,7 @@ class FPN(Backbone):
         if self.top_block is not None:
             for s in range(stage, stage + self.top_block.num_levels):
                 self._out_feature_strides["p{}".format(s + 1)] = 2 ** (s + 1)
-        
+
         self._out_features = list(self._out_feature_strides.keys())
         if self.addition_ensemble == "LargeDilated" or self.addition_ensemble == "LargeDeform":
             self._out_feature_channels = {k: out_channels * 2 for k in self._out_features}
@@ -181,32 +188,27 @@ class FPN(Backbone):
             for name in self._out_features
         }
 
+
 class LRFModule(nn.Module):
     """
     Large Receptive Fusion Module.
     """
 
-    def __init__(self,
+    def __init__(
+        self, in_channels, out_channels, kernel_size=3, stride=1, padding=1, bias=True, norm=""
+    ):
+        super().__init__()
+        dilation = 2
+        self.conv1 = Conv2d(
             in_channels,
             out_channels,
             kernel_size=3,
             stride=1,
             padding=1,
-            bias=True,
-            norm="",
-            ):
-        super().__init__()
-        dilation = 2
-        self.conv1 = Conv2d(
-                in_channels,
-                out_channels,
-                kernel_size=3,
-                stride=1,
-                padding=1,
-                bias=bias,
-                norm=get_norm(norm, out_channels),
-            )
-        
+            bias=bias,
+            norm=get_norm(norm, out_channels),
+        )
+
         self.conv2 = Conv2d(
             in_channels,
             out_channels,
@@ -220,38 +222,41 @@ class LRFModule(nn.Module):
         )
         for conv in [self.conv1, self.conv2]:
             weight_init.c2_xavier_fill(conv)
+
     def forward(self, x):
         x1 = self.conv1(x)
         x2 = self.conv2(x)
         return torch.cat((x1, x2), dim=1)
+
 
 class LRFDCNModule(nn.Module):
     """
     Large Receptive Fusion Module.
     """
 
-    def __init__(self,
+    def __init__(
+        self,
+        in_channels,
+        out_channels,
+        kernel_size=3,
+        stride=1,
+        padding=1,
+        deform_modulated=True,
+        bias=True,
+        norm="",
+    ):
+        super().__init__()
+        dilation = 2
+        self.deform_modulated = deform_modulated
+        self.conv1 = Conv2d(
             in_channels,
             out_channels,
             kernel_size=3,
             stride=1,
             padding=1,
-            deform_modulated=True,
-            bias=True,
-            norm="",
-            ):
-        super().__init__()
-        dilation = 2
-        self.deform_modulated = deform_modulated
-        self.conv1 = Conv2d(
-                in_channels,
-                out_channels,
-                kernel_size=3,
-                stride=1,
-                padding=1,
-                bias=bias,
-                norm=get_norm(norm, out_channels),
-            )
+            bias=bias,
+            norm=get_norm(norm, out_channels),
+        )
         if deform_modulated:
             deform_conv_op = ModulatedDeformConv
             offset_channels = 27
@@ -298,6 +303,7 @@ class LRFDCNModule(nn.Module):
             x2 = self.conv2(x, offset)
         return torch.cat((x1, x2), dim=1)
 
+
 def _assert_strides_are_log2_contiguous(strides):
     """
     Assert that each stride is 2x times its preceding stride, i.e. "contiguous in log2".
@@ -323,6 +329,7 @@ class LastLevelMaxPool(nn.Module):
         return [F.max_pool2d(x, kernel_size=1, stride=2, padding=0)]
         # return [F.max_pool2d(x, kernel_size=2, stride=2, padding=0)]
 
+
 class LastLevelAvgPool(nn.Module):
     def __init__(self):
         super().__init__()
@@ -331,6 +338,7 @@ class LastLevelAvgPool(nn.Module):
 
     def forward(self, x):
         return [F.avg_pool2d(x, kernel_size=2, stride=2, padding=0)]
+
 
 class LastLevelP6P7(nn.Module):
     """
@@ -375,6 +383,7 @@ def build_resnet_fpn_backbone(cfg, input_shape: ShapeSpec):
     )
     return backbone
 
+
 @BACKBONE_REGISTRY.register()
 def build_resnet_fpn_backbone_better(cfg, input_shape: ShapeSpec):
     """
@@ -397,6 +406,7 @@ def build_resnet_fpn_backbone_better(cfg, input_shape: ShapeSpec):
     )
     return backbone
 
+
 @BACKBONE_REGISTRY.register()
 def build_resnet_fpn_backbone_lrf(cfg, input_shape: ShapeSpec):
     """
@@ -416,9 +426,10 @@ def build_resnet_fpn_backbone_lrf(cfg, input_shape: ShapeSpec):
         norm=cfg.MODEL.FPN.NORM,
         top_block=LastLevelAvgPool(),
         fuse_type=cfg.MODEL.FPN.FUSE_TYPE,
-        addition_ensemble='LargeDilated',
+        addition_ensemble="LargeDilated",
     )
     return backbone
+
 
 @BACKBONE_REGISTRY.register()
 def build_resnet_fpn_backbone_lrdcn(cfg, input_shape: ShapeSpec):
@@ -439,9 +450,10 @@ def build_resnet_fpn_backbone_lrdcn(cfg, input_shape: ShapeSpec):
         norm=cfg.MODEL.FPN.NORM,
         top_block=LastLevelAvgPool(),
         fuse_type=cfg.MODEL.FPN.FUSE_TYPE,
-        addition_ensemble='LargeDeform',
+        addition_ensemble="LargeDeform",
     )
     return backbone
+
 
 @BACKBONE_REGISTRY.register()
 def build_retinanet_resnet_fpn_backbone(cfg, input_shape: ShapeSpec):

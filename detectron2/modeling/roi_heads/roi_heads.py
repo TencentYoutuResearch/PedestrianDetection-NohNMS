@@ -156,8 +156,7 @@ class ROIHeads(torch.nn.Module):
         # Matcher to assign box proposals to gt boxes
         if self.ignore_ioa:
             self.proposal_matcher = MatcherIgnore(
-                cfg.MODEL.ROI_HEADS.IOU_THRESHOLDS,
-                cfg.MODEL.ROI_HEADS.IOU_LABELS,
+                cfg.MODEL.ROI_HEADS.IOU_THRESHOLDS, cfg.MODEL.ROI_HEADS.IOU_LABELS
             )
         else:
             self.proposal_matcher = Matcher(
@@ -201,11 +200,17 @@ class ROIHeads(torch.nn.Module):
             gt_classes = torch.zeros_like(matched_idxs) + self.num_classes
         if False:
             sampled_fg_idxs, sampled_bg_idxs = subsample_labels(
-                gt_classes, self.batch_size_per_image, self.positive_sample_fraction, self.num_classes
+                gt_classes,
+                self.batch_size_per_image,
+                self.positive_sample_fraction,
+                self.num_classes,
             )
         else:
             sampled_fg_idxs, sampled_bg_idxs = bernoulli_subsample_labels(
-                gt_classes, self.batch_size_per_image, self.positive_sample_fraction, self.num_classes
+                gt_classes,
+                self.batch_size_per_image,
+                self.positive_sample_fraction,
+                self.num_classes,
             )
 
         sampled_idxs = torch.cat([sampled_fg_idxs, sampled_bg_idxs], dim=0)
@@ -260,33 +265,47 @@ class ROIHeads(torch.nn.Module):
         num_bg_samples = []
         for proposals_per_image, targets_per_image in zip(proposals, targets):
             has_gt = len(targets_per_image) > 0
-            
+
             if self.ignore_ioa:
                 gt_boxes = targets_per_image.gt_boxes
-                match_quality_matrix = pairwise_iou(
+                match_quality_matrix = pairwise_iou(gt_boxes, proposals_per_image.proposal_boxes)
+                match_quality_matrix_t = match_quality_matrix.transpose(1, 0)
+                ignore_match_quality_matrix_t = pairwise_ioa(
                     gt_boxes, proposals_per_image.proposal_boxes
-                )
-                match_quality_matrix_t = match_quality_matrix.transpose(1,0)
-                ignore_match_quality_matrix_t = pairwise_ioa(gt_boxes, proposals_per_image.proposal_boxes).transpose(1,0)
+                ).transpose(1, 0)
 
-                gt_ignore_mask = targets_per_image.gt_classes.eq(-1).repeat(ignore_match_quality_matrix_t.shape[0], 1)
+                gt_ignore_mask = targets_per_image.gt_classes.eq(-1).repeat(
+                    ignore_match_quality_matrix_t.shape[0], 1
+                )
                 match_quality_matrix_t *= ~gt_ignore_mask
                 ignore_match_quality_matrix_t *= gt_ignore_mask
 
-                matched_idxs, matched_labels = self.proposal_matcher(match_quality_matrix_t, ignore_match_quality_matrix_t, targets_per_image.gt_classes)
+                matched_idxs, matched_labels = self.proposal_matcher(
+                    match_quality_matrix_t,
+                    ignore_match_quality_matrix_t,
+                    targets_per_image.gt_classes,
+                )
             elif False:
                 gt_boxes = targets_per_image.gt_boxes[targets_per_image.gt_classes != -1]
                 ignore_gt_boxes = targets_per_image.gt_boxes[targets_per_image.gt_classes == -1]
-                match_quality_matrix = pairwise_iou(
-                    gt_boxes, proposals_per_image.proposal_boxes
-                )
+                match_quality_matrix = pairwise_iou(gt_boxes, proposals_per_image.proposal_boxes)
                 matched_idxs, matched_labels = self.proposal_matcher(match_quality_matrix)
                 if len(ignore_gt_boxes) > 0:
-                    ignore_overlaps = pairwise_ioa(ignore_gt_boxes, proposals_per_image.proposal_boxes)
+                    ignore_overlaps = pairwise_ioa(
+                        ignore_gt_boxes, proposals_per_image.proposal_boxes
+                    )
                     ignore_overlaps_vals, _ = ignore_overlaps.max(dim=0)
                     iou_vals, _ = match_quality_matrix.max(dim=0)
-                    matched_labels[(matched_labels == 0) & (ignore_overlaps_vals > iou_vals) & (ignore_overlaps_vals > self.iou_thresholds[0])] = -1
-                    matched_labels[(matched_labels != 1) & (ignore_overlaps_vals > iou_vals) & (ignore_overlaps_vals < self.iou_thresholds[0])] = 0
+                    matched_labels[
+                        (matched_labels == 0)
+                        & (ignore_overlaps_vals > iou_vals)
+                        & (ignore_overlaps_vals > self.iou_thresholds[0])
+                    ] = -1
+                    matched_labels[
+                        (matched_labels != 1)
+                        & (ignore_overlaps_vals > iou_vals)
+                        & (ignore_overlaps_vals < self.iou_thresholds[0])
+                    ] = 0
                 gt_targets = targets_per_image.gt_classes != -1
                 targets_per_image = targets_per_image[gt_targets]
             else:
@@ -587,20 +606,23 @@ class StandardROIHeads(ROIHeads):
 
     def _init_overlap_head(self, cfg, input_shape, in_channels, pooler_resolution):
 
-        self.build_on_roi_feature        = cfg.MODEL.OVERLAP_BOX_HEAD.BUILD_ON_ROI_FEATURE
-        self.sigmoid_on                  = cfg.MODEL.OVERLAP_BOX_HEAD.SIGMOID_ON
+        self.build_on_roi_feature = cfg.MODEL.OVERLAP_BOX_HEAD.BUILD_ON_ROI_FEATURE
+        self.sigmoid_on = cfg.MODEL.OVERLAP_BOX_HEAD.SIGMOID_ON
 
         self.overlap_configs = {
             "overlap_iou_threshold": cfg.MODEL.OVERLAP_BOX_HEAD.OVERLAP_IOU_THRESHOLD,
             "loss_overlap_reg_coeff": cfg.MODEL.OVERLAP_BOX_HEAD.REG_LOSS_COEFF,
-            'uniform_reg_divisor': cfg.MODEL.OVERLAP_BOX_HEAD.UNIFORM_REG_DIVISOR,
-            'cls_box_beta': cfg.MODEL.OVERLAP_BOX_HEAD.PROB_LOSS_BETA,
+            "uniform_reg_divisor": cfg.MODEL.OVERLAP_BOX_HEAD.UNIFORM_REG_DIVISOR,
+            "cls_box_beta": cfg.MODEL.OVERLAP_BOX_HEAD.PROB_LOSS_BETA,
         }
         if self.build_on_roi_feature:
             self.overlap_head = build_box_head(
-                cfg, ShapeSpec(channels=in_channels, height=pooler_resolution, width=pooler_resolution)
+                cfg,
+                ShapeSpec(channels=in_channels, height=pooler_resolution, width=pooler_resolution),
             )
-        self.overlap_predictor = OverlapOutputLayers(self.box_head.output_size, sigmoid_on=self.sigmoid_on)
+        self.overlap_predictor = OverlapOutputLayers(
+            self.box_head.output_size, sigmoid_on=self.sigmoid_on
+        )
 
     def _init_mask_head(self, cfg, input_shape):
         # fmt: off
@@ -746,11 +768,11 @@ class StandardROIHeads(ROIHeads):
                 pred_proposal_deltas,
                 proposals,
                 self.smooth_l1_beta,
-                pred_overlap_deltas = pred_overlap_deltas,
-                pred_overlap_prob = pred_overlap_prob,
-                overlap_configs = self.overlap_configs,
-                giou = self.giou,
-                allow_oob = self.allow_oob,
+                pred_overlap_deltas=pred_overlap_deltas,
+                pred_overlap_prob=pred_overlap_prob,
+                overlap_configs=self.overlap_configs,
+                giou=self.giou,
+                allow_oob=self.allow_oob,
             )
 
         else:
@@ -766,8 +788,8 @@ class StandardROIHeads(ROIHeads):
                 pred_proposal_deltas,
                 proposals,
                 self.smooth_l1_beta,
-                giou = self.giou,
-                allow_oob = self.allow_oob,
+                giou=self.giou,
+                allow_oob=self.allow_oob,
             )
 
         if self.training:
