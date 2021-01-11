@@ -22,6 +22,8 @@ This work has won the **first place** at the [CrowdHuman Challenge, 2020](http:/
 | Faster RCNN | ResNet-50| 85.0 |   87.5  | 44.5 |
 |   NOH-NMS   | ResNet-50| 88.8 |   92.6  | 43.7 |
 
+* We provide the weights of Faster RCNN and NOH-NMS in [here](https://1drv.ms/u/s!Av_kGG3Ke7utap2fqTsHh-Bs9Os?e=9Rrd87).
+
 ## Prepare Datasets
 Download the CrowdHuman Datasets from http://www.crowdhuman.org/, and then move them under the directory like:
 ```
