@@ -17,12 +17,10 @@ This work has won the **first place** at the [CrowdHuman Challenge, 2020](http:/
 * This repo is implemented based on [detectron2](https://github.com/facebookresearch/detectron2).
 
 ## Performance
-|    Model    | Backbone |  AP  |  Recall |  MR  |  
-|-------------|----------|------|---------|------| 
-| Faster RCNN | ResNet-50| 85.0 |   87.5  | 44.5 |
-|   NOH-NMS   | ResNet-50| 88.8 |   92.6  | 43.7 |
-
-* We provide the weights of Faster RCNN and NOH-NMS in [here](https://1drv.ms/u/s!Av_kGG3Ke7utap2fqTsHh-Bs9Os?e=9Rrd87).
+|    Model    | Backbone |  AP  |  Recall |  MR  | Weights |
+|-------------|----------|------|---------|------|----------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Faster RCNN | ResNet-50| 85.0 |   87.5  | 44.5 | [faster_rcnn_model_final.pth](https://api.onedrive.com/v1.0/shares/u!aHR0cHM6Ly8xZHJ2Lm1zL3UvcyFBdl9rR0czS2U3dXRiMmZ6elBoTkdHUV9BcG8_ZT1mYVFwUVo/root/content) |
+|   NOH-NMS   | ResNet-50| 88.8 |   92.6  | 43.7 | [noh_nms_model_final.pth](https://api.onedrive.com/v1.0/shares/u!aHR0cHM6Ly8xZHJ2Lm1zL3UvcyFBdl9rR0czS2U3dXRjSVpvQWJQYjVPMUlWMHc_ZT00RXJZQWg/root/content)     |
 
 ## Prepare Datasets
 Download the CrowdHuman Datasets from http://www.crowdhuman.org/, and then move them under the directory like:
