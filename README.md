@@ -42,6 +42,17 @@ Download the CrowdHuman Datasets from http://www.crowdhuman.org/, and then move 
   sh build.sh
 ```
 
+## Training in Command Line
+Train Faster RCNN on 8 gpus:
+```
+python tools/train_net.py --num-gpus 8 --config-file configs/CrowdHuman/faster_rcnn_R_50_FPN_baseline_iou_0.5.yaml
+```
+
+Train NOH-NMS on 8 gpus:
+```
+python tools/train_net.py --num-gpus 8 --config-file configs/CrowdHuman/faster_rcnn_R_50_FPN_baseline_iou_0.5_noh_nms.yaml
+```
+
 ## Quick Start
 See [GETTING_STARTED.md](GETTING_STARTED.md) in detectron2
 
